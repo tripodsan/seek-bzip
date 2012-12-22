@@ -1,0 +1,12 @@
+{
+  "name": "node-bzip",
+  "version": "0.0.1",
+  "author": "Eli Skeggs",
+  "description": "a pure-javascript Node.JS module for decoding bzip2 data",
+  "main": "./node-bzip/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skeggse/node-bzip.git"
+  },
+  "license": "LGPL 2.1"
+}

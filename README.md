@@ -1,11 +1,59 @@
-So, I guess this would be the readme file for my bzip2 implementation.
+# node-bzip
 
-It's actually pretty simple to use, you can pass your `Uint8Array` to the `bzip2.array` method to get a bit reader function. This bit reader function is what all the other methods, `header`, `decompress`, and `simple` use. 
+`node-bzip` is a pure-javascript Node.JS module adapted from antimatter15's pure-javascript implementation for decoding bzip2 data.  `node-bzip` currently only decodes buffers into other buffers, synchronously.
 
-`header(bitstream)` quite obviously reads in the bzip2 file header. It returns a single number between 1 and 9 describing the block size, which is one of the arguments of `decompress`
+## How to Install
 
-`decompress(bitstream, size[, len])` does the main decompression of a single block. It'll return -1 if it detects that it's the final block, otherwise it returns a string with the decompressed data. If you want to cap the output to a certain number of bytes, set the `len` argument.
+```
+npm install node-bzip
+```
 
-`simple(bitstream)` is what you probably want to use, because it combines `header` and loops over `decompress` so that the entire file is decompressed and returned as a string.
+## Usage
 
-`array(typed_array)` is the function that generates that mythical bitstream function from a standard `Uint8Array` which you can make from an array buffer with `new Uint8Array(arraybuffer)`.
+After compressing some example data into `example.bz2`, the following with recreate that original data and save it to `example`.
+
+```
+var decodeBzip = require('node-bzip');
+var fs = require('fs');
+
+var compressedData = fs.readFileSync('example.bz2');
+var data = decodeBzip(compressedData);
+
+fs.writeFileSync('example', data);
+```
+
+## Documentation
+
+`require('node-bzip')` returns a function accepting one or two parameters:
+
+`function decodeBzip(Buffer inputBuffer, [Number expectedSize])`
+
+If `expectedSize` is not present, `decodeBzip` simply decodes `inputBuffer` and returns the resulting `Buffer`.
+
+If `expectedSize` is present, `decodeBzip` will store the results in a `Buffer` of length `expectedSize`, and throw an error in the case that the size of the decoded data does not match `expectedSize`.
+
+## Notices
+
+Please note that this module is almost entirely *untested* and **should not be used in a production environment**!
+
+## License
+
+#### LGPL 2.1 License
+
+```
+Copyright &copy; 2012 Eli Skeggs
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, see
+http://www.gnu.org/licenses/lgpl-2.1.html
+```
