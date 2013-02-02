@@ -1,4 +1,4 @@
-/* 
+/*
 node-bzip - a pure-javascript Node.JS module for decoding bzip2 data
 
 Copyright (C) 2012 Eli Skeggs
@@ -52,7 +52,7 @@ var decode = function(inputbuffer, outputsize) {
   if (level < 1 || level > 9)
     throw new TypeError('level out of range');
   var reader = new BitReader(inputbuffer, 4);
-  
+
   // meat of cow
   var bufsize = 100000 * level;
   var output = outputsize ? new Buffer(outputsize) : '';
@@ -97,7 +97,7 @@ var decode = function(inputbuffer, outputsize) {
       mtfSymbol[i] = i;
 
     var selectors = new Buffer(nSelectors); // was 32768...
-    
+
     for (var i = 0; i < nSelectors; i++) {
       for (var j = 0; reader.read(1); j++)
         if (j >= groupCount)
@@ -141,7 +141,7 @@ var decode = function(inputbuffer, outputsize) {
       hufGroup.maxLen = maxLen;
       var pp = 0, i;
       for (i = minLen; i <= maxLen; i++)
-        for (t = 0; t < symCount; t++) 
+        for (t = 0; t < symCount; t++)
           if (length[t] === i)
             hufGroup.permute[pp++] = t;
       for (i = minLen; i <= maxLen;)
