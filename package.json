@@ -3,10 +3,10 @@
   "version": "0.0.2",
   "author": "Eli Skeggs, C. Scott Ananian, Kevin Kwok",
   "description": "a pure-javascript Node.JS module for decoding bzip2 data",
-  "main": "./node-bzip/index.js",
+  "main": "./seek-bzip/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cscott/node-bzip.git"
+    "url": "https://github.com/cscott/seek-bzip.git"
   },
   "license": "LGPL 2.1",
   "directories": {
