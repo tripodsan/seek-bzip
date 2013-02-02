@@ -163,7 +163,7 @@ var decode = function(inputbuffer, outputsize) {
     var byteCount = new Uint32Array(256); // Uint32Array
     for (var i = 0; i < 256; i++)
       mtfSymbol[i] = i;
-    var runPos = 0, count = 0, symCount = 0, selector = 0;
+    var runPos = 0, count = 0, symCount = 0, selector = 0, uc;
     var buf = new Array(bufsize); // Uint32Array
     for (;;) {
       if (!(symCount--)) {
