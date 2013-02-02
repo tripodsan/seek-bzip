@@ -67,7 +67,6 @@ BitReader.prototype.pi = function() {
     buf = new Buffer(6);
     for (var i = 0; i < buf.length; i++)
       buf[i] = this.read(8);
-    this.offset += 6;
   }
   return buf.toString('hex');
 };
