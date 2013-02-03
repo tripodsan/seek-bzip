@@ -440,7 +440,7 @@ Bunzip.decode = function(inputbuffer, outputsize) {
   }
   if (bz.outputsize && bz.nextoutput !== bz.outputsize)
     throw new TypeError('outputsize does not match decoded input');
-  return bz.outputsize ? bz.output : new Buffer(bz.output);
+  return bz.outputsize ? bz.output : new Buffer(bz.output, 'ascii');
 };
 Bunzip.decodeBlock = function(inputbuffer, pos, outputsize) {
   var bz = new Bunzip(inputbuffer, outputsize);
@@ -458,7 +458,7 @@ Bunzip.decodeBlock = function(inputbuffer, pos, outputsize) {
     bz._read_bunzip();
     // XXX keep writing?
   }
-  return bz.outputsize ? bz.output : new Buffer(bz.output);
+  return bz.outputsize ? bz.output : new Buffer(bz.output, 'ascii');
 }
 
 module.exports = Bunzip;

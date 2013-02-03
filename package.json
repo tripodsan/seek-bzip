@@ -1,6 +1,6 @@
 {
   "name": "seek-bzip",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Eli Skeggs, C. Scott Ananian, Kevin Kwok",
   "description": "a pure-javascript Node.JS module for decoding bzip2 data",
   "main": "./seek-bzip/index.js",
