@@ -50,12 +50,33 @@ The second is a function accepting two or three parameters:
 The `inputBuffer` and `expectedSize` parameters are as above.
 The `blockStartBits` parameter gives the start of the desired block, in bits.
 
+## Help wanted
+
+The following improvements to this module would be generally useful.
+Feel free to fork on github and submit pull requests!
+
+* Streaming interface.  The original `micro-bunzip2` and `seek-bzip2` codebases
+contained a slightly more complicated input/output system which allowed
+streaming chunks of input and output data.  It wouldn't be hard to retrofit
+that to this code base.
+
+* Port the `bzip-table` tool from the `seek-bzip2` codebase, so that index
+generation is self-contained.  Again, not very hard!
+
+* Add command-line binaries to the node module for `bzip-table` and
+`seek-bunzip`.
+
+* Add compression along with decompression.  See `micro-bzip` at
+http://www.landley.net/code/
+
 ## License
 
 #### LGPL 2.1 License
 
 > Copyright &copy; 2013 C. Scott Ananian
+>
 > Copyright &copy; 2012 Eli Skeggs
+>
 > Copyright &copy; 2011 Kevin Kwok
 >
 > This library is free software; you can redistribute it and/or
