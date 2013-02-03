@@ -58,6 +58,14 @@ BitReader.prototype.read = function(bits) {
   return result;
 };
 
+// seek to an arbitrary point in the buffer (expressed in bits)
+BitReader.prototype.seek = function(pos) {
+  var n_bit = pos % 8;
+  var n_byte = (pos - n_bit) / 8;
+  this.offset = n_byte;
+  this.bitOffset = n_bit;
+};
+
 // reads 6 bytes worth of data using the read method
 BitReader.prototype.pi = function() {
   var buf;

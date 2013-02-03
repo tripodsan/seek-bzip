@@ -442,5 +442,23 @@ Bunzip.decode = function(inputbuffer, outputsize) {
     throw new TypeError('outputsize does not match decoded input');
   return bz.outputsize ? bz.output : new Buffer(bz.output);
 };
+Bunzip.decodeBlock = function(inputbuffer, pos, outputsize) {
+  var bz = new Bunzip(inputbuffer, outputsize);
+  bz.reader.seek(pos);
+  /* Fill the decode buffer for the block */
+  var moreBlocks = bz._get_next_block();
+  if (moreBlocks) {
+    /* Init the CRC for writing */
+    this.writeCRC = 0xffffffff;
+
+    /* Zero this so the current byte from before the seek is not written */
+    this.writeCopies = 0;
+
+    /* Decompress the block and write to stdout */
+    bz._read_bunzip();
+    // XXX keep writing?
+  }
+  return bz.outputsize ? bz.output : new Buffer(bz.output);
+}
 
 module.exports = Bunzip;
