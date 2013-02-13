@@ -48,7 +48,7 @@ var mtf = function(array, index) {
   for (i = index; i > 0; ) {
     array[i] = array[--i];
   }
-  return array[0] = src;
+  return (array[0] = src);
 };
 
 var Err = {
@@ -72,7 +72,7 @@ ErrorMessages[Err.OUT_OF_MEMORY] =         "Out of memory";
 ErrorMessages[Err.OBSOLETE_INPUT] = "Obsolete (pre 0.9.5) bzip format not supported.";
 
 var _throw = function(status, optDetail) {
-  var msg = ErrorMessage[status] || 'unknown error';
+  var msg = ErrorMessages[status] || 'unknown error';
   if (optDetail) { msg += ': '+optDetail; }
   var e = new TypeError(msg);
   e.errorCode = status;
