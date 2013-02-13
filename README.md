@@ -37,28 +37,38 @@ contains a `bzip-table` tool which will generate bzip2 block start indices.
 `require('seek-bzip')` returns a `Bunzip` object.  It contains two static
 methods.  The first is a function accepting one or two parameters:
 
-`Bunzip.decode = function(Buffer inputBuffer, [Number expectedSize])`
+`Bunzip.decode = function(input, [Number expectedSize] or [output])`
 
-If `expectedSize` is not present, `decodeBzip` simply decodes `inputBuffer` and returns the resulting `Buffer`.
+The `input` argument can be a "stream" object (which must implement the
+`readByte` method), or a `Buffer`.
 
-If `expectedSize` is present, `decodeBzip` will store the results in a `Buffer` of length `expectedSize`, and throw an error in the case that the size of the decoded data does not match `expectedSize`.
+If `expectedSize` is not present, `decodeBzip` simply decodes `input` and
+returns the resulting `Buffer`.
 
-The second is a function accepting two or three parameters:
+If `expectedSize` is present (and numeric), `decodeBzip` will store
+the results in a `Buffer` of length `expectedSize`, and throw an error
+in the case that the size of the decoded data does not match
+`expectedSize`.
 
-`Bunzip.decodeBlock = function(Buffer inputBuffer, Number blockStartBits, [Number expectedSize])`
+If you pass a non-numeric second object, it can either be a `Buffer`
+object (which must be of the correct length; an error will be thrown if
+the size of the decoded data does not match the buffer length) or
+a "stream" object (which must implement a `writeByte` method).
 
-The `inputBuffer` and `expectedSize` parameters are as above.
+The second exported method is a function accepting two or three parameters:
+
+`Bunzip.decodeBlock = function(input, Number blockStartBits, [Number expectedSize] or [output])`
+
+The `input` and `expectedSize`/`output` parameters are as above.
 The `blockStartBits` parameter gives the start of the desired block, in bits.
+
+If passing a stream as the `input` parameter, it must implement the
+`seek` method.
 
 ## Help wanted
 
 The following improvements to this module would be generally useful.
 Feel free to fork on github and submit pull requests!
-
-* Streaming interface.  The original `micro-bunzip2` and `seek-bzip2` codebases
-contained a slightly more complicated input/output system which allowed
-streaming chunks of input and output data.  It wouldn't be hard to retrofit
-that to this code base.
 
 * Port the `bzip-table` tool from the `seek-bzip2` codebase, so that index
 generation is self-contained.  Again, not very hard!

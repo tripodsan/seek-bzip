@@ -450,6 +450,7 @@ var coerceOutputStream = function(output) {
       return output;
     } else {
       outputStream.buffer = output;
+      resizeOk = false;
     }
   } else {
     outputStream.buffer = new Buffer(16384);
@@ -516,5 +517,7 @@ Bunzip.decodeBlock = function(input, pos, output) {
   if ('getBuffer' in outputStream)
     return outputStream.getBuffer();
 }
+
+Bunzip.Stream = Stream;
 
 module.exports = Bunzip;
