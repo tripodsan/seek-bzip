@@ -439,6 +439,7 @@ var coerceInputStream = function(input) {
   inputStream.pos = 0;
   inputStream.readByte = function() { return input[this.pos++]; };
   inputStream.seek = function(pos) { this.pos = pos; };
+  inputStream.eof = function() { return this.pos >= input.length; };
   return inputStream;
 };
 var coerceOutputStream = function(output) {
@@ -485,14 +486,25 @@ var coerceOutputStream = function(output) {
 Bunzip.Err = Err;
 // 'input' can be a stream or a buffer
 // 'output' can be a stream or a buffer or a number (buffer size)
-Bunzip.decode = function(input, output) {
+Bunzip.decode = function(input, output, multistream) {
   // make a stream from a buffer, if necessary
   var inputStream = coerceInputStream(input);
   var outputStream = coerceOutputStream(output);
 
   var bz = new Bunzip(inputStream, outputStream);
-  while (bz._init_block()) {
-    bz._read_bunzip();
+  while (true) {
+    if ('eof' in inputStream && inputStream.eof()) break;
+    if (bz._init_block()) {
+      bz._read_bunzip();
+    } else {
+      var crc = bz.reader.read(32); // (but we ignore the crc)
+      if (multistream &&
+          'eof' in inputStream &&
+          !inputStream.eof()) {
+        // note that start_bunzip will also resync the bit reader to next byte
+        bz._start_bunzip(inputStream, outputStream);
+      } else break;
+    }
   }
   if ('getBuffer' in outputStream)
     return outputStream.getBuffer();

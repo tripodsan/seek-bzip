@@ -10,7 +10,9 @@ program
     .option('-d, --decompress',
 	    'Decompress stdin to stdout')
     .option('-z, --compress',
-	    'Compress stdin to stdout');
+	    'Compress stdin to stdout')
+    .option('-m, --multistream',
+	    'Read a multistream bzip2 file');
 program.on('--help', function() {
     console.log('  If <infile> is omitted, reads from stdin.');
     console.log('  If <outfile> is omitted, writes to stdout.');
@@ -49,6 +51,10 @@ var makeInStream = function(in_fd) {
 		bytesRead++;
 	    }
 	    return bytesRead;
+	},
+	eof: function() {
+	  if (this.pos >= this.end) { this._fillBuffer(); }
+	  return !(this.pos < this.end);
 	}
     };
     if (stat.size) {
@@ -86,7 +92,7 @@ var inStream = makeInStream(in_fd);
 var outStream= makeOutStream(out_fd);
 
 if (program.decompress) {
-    Bunzip.decode(inStream, outStream);
+    Bunzip.decode(inStream, outStream, program.multistream);
     outStream.flush();
     close_in();
     close_out();
