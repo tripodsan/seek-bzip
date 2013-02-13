@@ -31,6 +31,7 @@ Robert Sedgewick, and Jon L. Bentley.
 */
 
 var BitReader = require('./bitreader');
+var Stream = require('./stream');
 
 var MAX_HUFCODE_BITS = 20;
 var MAX_SYMBOLS = 258;
@@ -78,10 +79,10 @@ var _throw = function(status, optDetail) {
   throw e;
 };
 
-var Bunzip = function(inputbuffer, outputsize) {
+var Bunzip = function(inputStream, outputsize) {
   this.writePos = this.writeCurrent = this.writeCount = 0;
 
-  this._start_bunzip(inputbuffer, outputsize);
+  this._start_bunzip(inputStream, outputsize);
 };
 Bunzip.prototype._init_block = function() {
   var moreBlocks = this._get_next_block();
@@ -93,15 +94,17 @@ Bunzip.prototype._init_block = function() {
   return true;
 };
 /* XXX micro-bunzip uses (inputStream, inputBuffer, len) as arguments */
-Bunzip.prototype._start_bunzip = function(inputbuffer, outputsize) {
+Bunzip.prototype._start_bunzip = function(inputStream, outputsize) {
   /* Ensure that file starts with "BZh['1'-'9']." */
-  if (inputbuffer.toString(null, 0, 3) !== 'BZh')
+  var buf = new Buffer(4);
+  if (inputStream.read(buf, 0, 4) !== 4 ||
+      buf.toString('ascii',0,3) !== 'BZh')
     _throw(Err.NOT_BZIP_DATA, 'bad magic');
-  var level = inputbuffer[3] - 0x30;
+  var level = buf[3] - 0x30;
   if (level < 1 || level > 9)
     _throw(Err.NOT_BZIP_DATA, 'level out of range');
 
-  this.reader = new BitReader(inputbuffer, 4);
+  this.reader = new BitReader(inputStream);
 
   /* Fourth byte (ascii '1'-'9'), indicates block size in units of 100k of
      uncompressed data.  Allocate intermediate buffer for block. */
@@ -431,10 +434,23 @@ Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
   return this.nextoutput;
 };
 
+var coerceInputStream = function(input) {
+  if ('readByte' in input) { return input; }
+  var inputStream = new Stream();
+  inputStream.pos = 0;
+  inputStream.readByte = function() { return input[this.pos++]; };
+  inputStream.seek = function(pos) { this.pos = pos; };
+  return inputStream;
+};
+
 /* Static helper functions */
 Bunzip.Err = Err;
-Bunzip.decode = function(inputbuffer, outputsize) {
-  var bz = new Bunzip(inputbuffer, outputsize);
+// 'input' can be a stream or a buffer
+Bunzip.decode = function(input, outputsize) {
+  // make a stream from a buffer, if necessary
+  var inputStream = coerceInputStream(input);
+
+  var bz = new Bunzip(inputStream, outputsize);
   while (bz._init_block()) {
     bz._read_bunzip();
   }
@@ -442,8 +458,10 @@ Bunzip.decode = function(inputbuffer, outputsize) {
     throw new TypeError('outputsize does not match decoded input');
   return bz.outputsize ? bz.output : new Buffer(bz.output, 'ascii');
 };
-Bunzip.decodeBlock = function(inputbuffer, pos, outputsize) {
-  var bz = new Bunzip(inputbuffer, outputsize);
+Bunzip.decodeBlock = function(input, pos, outputsize) {
+  // make a stream from a buffer, if necessary
+  var inputStream = coerceInputStream(input);
+  var bz = new Bunzip(inputStream, outputsize);
   bz.reader.seek(pos);
   /* Fill the decode buffer for the block */
   var moreBlocks = bz._get_next_block();
