@@ -73,8 +73,7 @@ Feel free to fork on github and submit pull requests!
 * Port the `bzip-table` tool from the `seek-bzip2` codebase, so that index
 generation is self-contained.  Again, not very hard!
 
-* Add command-line binaries to the node module for `bzip-table` and
-`seek-bunzip`.
+* Add command-line binaries to the node module for `bzip-table`.
 
 * Add compression along with decompression.  See `micro-bzip` at
 http://www.landley.net/code/

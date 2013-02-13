@@ -32,6 +32,7 @@ Robert Sedgewick, and Jon L. Bentley.
 
 var BitReader = require('./bitreader');
 var Stream = require('./stream');
+var pjson = require('../package.json');
 
 var MAX_HUFCODE_BITS = 20;
 var MAX_SYMBOLS = 258;
@@ -100,6 +101,7 @@ Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
   if (inputStream.read(buf, 0, 4) !== 4 ||
       buf.toString('ascii',0,3) !== 'BZh')
     _throw(Err.NOT_BZIP_DATA, 'bad magic');
+
   var level = buf[3] - 0x30;
   if (level < 1 || level > 9)
     _throw(Err.NOT_BZIP_DATA, 'level out of range');
@@ -519,5 +521,8 @@ Bunzip.decodeBlock = function(input, pos, output) {
 }
 
 Bunzip.Stream = Stream;
+
+Bunzip.version = pjson.version;
+Bunzip.license = pjson.license;
 
 module.exports = Bunzip;

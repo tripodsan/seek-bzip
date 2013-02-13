@@ -9,10 +9,14 @@
     "url": "https://github.com/cscott/seek-bzip.git"
   },
   "license": "LGPL 2.1",
+  "bin": {
+    "seek-bunzip": "./bin/seek-bunzip",
+  },
   "directories": {
     "test": "test"
   },
   "dependencies": {
+    "commander": "~1.1.1"
   },
   "devDependencies": {
     "mocha": "~1.8.1"
