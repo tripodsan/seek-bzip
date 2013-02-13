@@ -531,6 +531,51 @@ Bunzip.decodeBlock = function(input, pos, output) {
   if ('getBuffer' in outputStream)
     return outputStream.getBuffer();
 }
+/* Reads bzip2 file from stream or buffer `input`, and invoke
+ * `callback(position, size)` once for each bzip2 block,
+ * where position gives the starting position (in *bits*)
+ * and size gives uncompressed size of the block (in *bytes*). */
+Bunzip.table = function(input, callback, multistream) {
+  // make a stream from a buffer, if necessary
+  var inputStream = new Stream();
+  inputStream.delegate = coerceInputStream(input);
+  inputStream.pos = 0;
+  inputStream.readByte = function() {
+    this.pos++;
+    return this.delegate.readByte();
+  };
+  if (inputStream.delegate.eof) {
+    inputStream.eof = inputStream.delegate.eof.bind(inputStream.delegate);
+  }
+  var outputStream = new Stream();
+  outputStream.pos = 0;
+  outputStream.writeByte = function() { this.pos++; };
+
+  var bz = new Bunzip(inputStream, outputStream);
+  var blockSize = bz.dbufSize;
+  while (true) {
+    if ('eof' in inputStream && inputStream.eof()) break;
+
+    var position = inputStream.pos*8 + bz.reader.bitOffset;
+    if (bz.reader.hasByte) { position -= 8; }
+
+    if (bz._init_block()) {
+      var start = outputStream.pos;
+      bz._read_bunzip();
+      callback(position, outputStream.pos - start);
+    } else {
+      var crc = bz.reader.read(32); // (but we ignore the crc)
+      if (multistream &&
+          'eof' in inputStream &&
+          !inputStream.eof()) {
+        // note that start_bunzip will also resync the bit reader to next byte
+        bz._start_bunzip(inputStream, outputStream);
+        console.assert(bz.dbufSize === blockSize,
+                       "shouldn't change block size within multistream file");
+      } else break;
+    }
+  }
+};
 
 Bunzip.Stream = Stream;
 

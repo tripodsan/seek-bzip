@@ -34,10 +34,10 @@ contains a `bzip-table` tool which will generate bzip2 block start indices.
 
 ## Documentation
 
-`require('seek-bzip')` returns a `Bunzip` object.  It contains two static
+`require('seek-bzip')` returns a `Bunzip` object.  It contains three static
 methods.  The first is a function accepting one or two parameters:
 
-`Bunzip.decode = function(input, [Number expectedSize] or [output])`
+`Bunzip.decode = function(input, [Number expectedSize] or [output], [boolean multistream])`
 
 The `input` argument can be a "stream" object (which must implement the
 `readByte` method), or a `Buffer`.
@@ -50,10 +50,16 @@ the results in a `Buffer` of length `expectedSize`, and throw an error
 in the case that the size of the decoded data does not match
 `expectedSize`.
 
-If you pass a non-numeric second object, it can either be a `Buffer`
+If you pass a non-numeric second parameter, it can either be a `Buffer`
 object (which must be of the correct length; an error will be thrown if
 the size of the decoded data does not match the buffer length) or
 a "stream" object (which must implement a `writeByte` method).
+
+The optional third `multistream` parameter, if true, attempts to continue
+reading past the end of the bzip2 file.  This supports "multistream"
+bzip2 files, which are simply multiple bzip2 files concatenated together.
+If this argument is true, the input stream must have an `eof` method
+which returns true when the end of the input has been reached.
 
 The second exported method is a function accepting two or three parameters:
 
@@ -65,15 +71,24 @@ The `blockStartBits` parameter gives the start of the desired block, in bits.
 If passing a stream as the `input` parameter, it must implement the
 `seek` method.
 
+The final exported method is a function accepting two or three parameters:
+
+`Bunzip.table = function(input, Function callback, [boolean multistream])`
+
+The `input` and `multistream` parameters are identical to those for the
+`decode` method.
+
+This function will invoke `callback(position, size)` once per bzip2 block,
+where `position` gives the starting position of the block (in *bits*), and
+`size` gives the uncompressed size of the block (in bytes).
+
+This can be used to construct an index allowing direct access to a particular
+block inside a bzip2 file, using the `decodeBlock` method.
+
 ## Help wanted
 
 The following improvements to this module would be generally useful.
 Feel free to fork on github and submit pull requests!
-
-* Port the `bzip-table` tool from the `seek-bzip2` codebase, so that index
-generation is self-contained.  Again, not very hard!
-
-* Add command-line binaries to the node module for `bzip-table`.
 
 * Add compression along with decompression.  See `micro-bzip` at
 http://www.landley.net/code/

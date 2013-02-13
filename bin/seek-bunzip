@@ -11,6 +11,8 @@ program
 	    'Decompress stdin to stdout')
     .option('-z, --compress',
 	    'Compress stdin to stdout')
+    .option('-b, --block <n>',
+	    'Extract a single block, starting at <n> bits.', -1)
     .option('-m, --multistream',
 	    'Read a multistream bzip2 file');
 program.on('--help', function() {
@@ -21,20 +23,30 @@ program.parse(process.argv);
 
 if (!program.compress) { program.decompress = true; }
 
+if (program.compress && (+program.block) <= 0) {
+    console.error('--block can only be used with decompression');
+    return 1;
+}
+
 if (program.decompress && program.compress) {
     console.error('Must specify either -d or -z.');
-    return;
+    return 1;
 }
 
 var makeInStream = function(in_fd) {
     var stat = fs.fstatSync(in_fd);
     var stream = {
 	buffer: new Buffer(4096),
+	filePos: null,
 	pos: 0,
 	end: 0,
 	_fillBuffer: function() {
-	    this.end = fs.readSync(in_fd, this.buffer, 0, this.buffer.length);
+	    this.end = fs.readSync(in_fd, this.buffer, 0, this.buffer.length,
+				  this.filePos);
 	    this.pos = 0;
+	    if (this.filePos !== null && this.end > 0) {
+		this.filePos += this.end;
+	    }
 	},
 	readByte: function() {
 	    if (this.pos >= this.end) { this._fillBuffer(); }
@@ -51,6 +63,10 @@ var makeInStream = function(in_fd) {
 		bytesRead++;
 	    }
 	    return bytesRead;
+	},
+	seek: function(seek_pos) {
+	    this.filePos = seek_pos;
+	    this.pos = this.end = 0;
 	},
 	eof: function() {
 	  if (this.pos >= this.end) { this._fillBuffer(); }
@@ -92,7 +108,11 @@ var inStream = makeInStream(in_fd);
 var outStream= makeOutStream(out_fd);
 
 if (program.decompress) {
-    Bunzip.decode(inStream, outStream, program.multistream);
+    if (program.block >= 0) {
+	Bunzip.decodeBlock(inStream, program.block, outStream);
+    } else {
+	Bunzip.decode(inStream, outStream, program.multistream);
+    }
     outStream.flush();
     close_in();
     close_out();

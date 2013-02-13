@@ -11,6 +11,7 @@
   "license": "LGPL 2.1",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
+    "seek-table":  "./bin/seek-bzip-table"
   },
   "directories": {
     "test": "test"
