@@ -32,6 +32,7 @@ Robert Sedgewick, and Jon L. Bentley.
 
 var BitReader = require('./bitreader');
 var Stream = require('./stream');
+var CRC32 = require('./crc32');
 var pjson = require('../package.json');
 
 var MAX_HUFCODE_BITS = 20;
@@ -93,7 +94,7 @@ Bunzip.prototype._init_block = function() {
     this.writeCount = -1;
     return false; /* no more blocks */
   }
-  this.writeCRC = 0xffffffff;
+  this.blockCRC = new CRC32();
   return true;
 };
 /* XXX micro-bunzip uses (inputStream, inputBuffer, len) as arguments */
@@ -115,6 +116,7 @@ Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
   this.dbufSize = 100000 * level;
   this.nextoutput = 0;
   this.outputStream = outputStream;
+  this.streamCRC = 0;
 };
 Bunzip.prototype._get_next_block = function() {
   var i, j, k;
@@ -128,7 +130,9 @@ Bunzip.prototype._get_next_block = function() {
   }
   if (h !== WHOLEPI)
     _throw(Err.NOT_BZIP_DATA);
-  reader.read(32); // ignoring CRC codes; is this wise?
+  this.targetBlockCRC = reader.read(32) >>> 0; // (convert to unsigned)
+  this.streamCRC = (this.targetBlockCRC ^
+                    ((this.streamCRC << 1) | (this.streamCRC>>>31))) >>> 0;
   /* We can add support for blockRandomised if anybody complains.  There was
      some code for this in busybox 1.0.0-pre3, but nobody ever noticed that
      it didn't actually work. */
@@ -421,6 +425,7 @@ Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
       copies = 1;
       outbyte = current;
     }
+    this.blockCRC.updateCRCRun(outbyte, copies);
     while (copies--) {
       this.outputStream.writeByte(outbyte);
       this.nextoutput++;
@@ -429,6 +434,12 @@ Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
       run = 0;
   }
   this.writeCount = dbufCount;
+  // check CRC
+  if (this.blockCRC.getCRC() !== this.targetBlockCRC) {
+    _throw(Err.DATA_ERROR, "Bad block CRC "+
+           "(got "+this.blockCRC.getCRC().toString(16)+
+           " expected "+this.targetBlockCRC.toString(16)+")");
+  }
   return this.nextoutput;
 };
 
@@ -496,7 +507,12 @@ Bunzip.decode = function(input, output, multistream) {
     if (bz._init_block()) {
       bz._read_bunzip();
     } else {
-      var crc = bz.reader.read(32); // (but we ignore the crc)
+      var targetStreamCRC = bz.reader.read(32) >>> 0; // (convert to unsigned)
+      if (targetStreamCRC !== bz.streamCRC) {
+        _throw(Err.DATA_ERROR, "Bad stream CRC "+
+               "(got "+bz.streamCRC.toString(16)+
+               " expected "+targetStreamCRC.toString(16)+")");
+      }
       if (multistream &&
           'eof' in inputStream &&
           !inputStream.eof()) {
@@ -518,7 +534,7 @@ Bunzip.decodeBlock = function(input, pos, output) {
   var moreBlocks = bz._get_next_block();
   if (moreBlocks) {
     /* Init the CRC for writing */
-    bz.blockCRC = 0xffffffff;
+    bz.blockCRC = new CRC32();
 
     /* Zero this so the current byte from before the seek is not written */
     bz.writeCopies = 0;
