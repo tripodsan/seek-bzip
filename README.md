@@ -8,6 +8,9 @@
 npm install seek-bzip
 ```
 
+This package uses
+[Typed Arrays](https://developer.mozilla.org/en-US/docs/JavaScript/Typed_arrays), which are present in node.js >= 0.5.5.
+
 ## Usage
 
 After compressing some example data into `example.bz2`, the following with recreate that original data and save it to `example`.
