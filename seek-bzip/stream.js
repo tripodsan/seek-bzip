@@ -26,7 +26,7 @@ Stream.prototype.seek = function(new_pos) {
 };
 
 // output streams ///////////
-Stream.prototype.writeByte = function(byte) {
+Stream.prototype.writeByte = function(_byte) {
   throw new Error("abstract method readByte() not implemented");
 };
 Stream.prototype.write = function(buffer, bufOffset, length) {

@@ -38,6 +38,7 @@ var MAX_HUFCODE_BITS = 20;
 var MAX_SYMBOLS = 258;
 var SYMBOL_RUNA = 0;
 var SYMBOL_RUNB = 1;
+var MIN_GROUPS = 2;
 var MAX_GROUPS = 6;
 var GROUP_SIZE = 50;
 
@@ -46,10 +47,11 @@ var SQRTPI = "177245385090";
 
 var mtf = function(array, index) {
   var src = array[index], i;
-  for (i = index; i > 0; ) {
-    array[i] = array[--i];
+  for (i = index; i > 0; i--) {
+    array[i] = array[i-1];
   }
-  return (array[0] = src);
+  array[0] = src;
+  return src;
 };
 
 var Err = {
@@ -99,7 +101,7 @@ Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
   /* Ensure that file starts with "BZh['1'-'9']." */
   var buf = new Buffer(4);
   if (inputStream.read(buf, 0, 4) !== 4 ||
-      buf.toString('ascii',0,3) !== 'BZh')
+      String.fromCharCode(buf[0], buf[1], buf[2]) !== 'BZh')
     _throw(Err.NOT_BZIP_DATA, 'bad magic');
 
   var level = buf[3] - 0x30;
@@ -115,6 +117,7 @@ Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
   this.outputStream = outputStream;
 };
 Bunzip.prototype._get_next_block = function() {
+  var i, j, k;
   var reader = this.reader;
   // this is get_next_block() function from micro-bunzip:
   /* Read in header signature and CRC, then validate signature.
@@ -141,10 +144,11 @@ Bunzip.prototype._get_next_block = function() {
      back to the corresponding bytes. */
   var t = reader.read(16);
   var symToByte = new Buffer(256), symTotal = 0;
-  for (var i = 0; i < 16; i++) {
+  for (i = 0; i < 16; i++) {
     if (t & (1 << (0xF - i))) {
-      var k = reader.read(16), o = i * 16;
-      for (var j = 0; j < 16; j++)
+      var o = i * 16;
+      k = reader.read(16);
+      for (j = 0; j < 16; j++)
         if (k & (1 << (0xF - j)))
           symToByte[symTotal++] = o + j;
     }
@@ -152,7 +156,7 @@ Bunzip.prototype._get_next_block = function() {
 
   /* How many different huffman coding groups does this block use? */
   var groupCount = reader.read(3);
-  if (groupCount < 2 || groupCount > MAX_GROUPS)
+  if (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS)
     _throw(Err.DATA_ERROR);
   /* nSelectors: Every GROUP_SIZE many symbols we select a new huffman coding
      group.  Read in the group selector list, which is stored as MTF encoded
@@ -162,15 +166,15 @@ Bunzip.prototype._get_next_block = function() {
   if (nSelectors === 0)
     _throw(Err.DATA_ERROR);
 
-  var mtfSymbol = []; // TODO: possibly replace with buffer?
-  for (var i = 0; i < groupCount; i++)
+  var mtfSymbol = new Buffer(256);
+  for (i = 0; i < groupCount; i++)
     mtfSymbol[i] = i;
 
   var selectors = new Buffer(nSelectors); // was 32768...
 
-  for (var i = 0; i < nSelectors; i++) {
+  for (i = 0; i < nSelectors; i++) {
     /* Get next value */
-    for (var j = 0; reader.read(1); j++)
+    for (j = 0; reader.read(1); j++)
       if (j >= groupCount) _throw(Err.DATA_ERROR);
     /* Decode MTF to get the next selector */
     selectors[i] = mtf(mtfSymbol, j);
@@ -179,14 +183,14 @@ Bunzip.prototype._get_next_block = function() {
   /* Read the huffman coding tables for each group, which code for symTotal
      literal symbols, plus two run symbols (RUNA, RUNB) */
   var symCount = symTotal + 2;
-  var groups = [];
-  for (var j = 0; j < groupCount; j++) {
+  var groups = [], hufGroup;
+  for (j = 0; j < groupCount; j++) {
     var length = new Buffer(symCount), temp = new Buffer(MAX_HUFCODE_BITS + 1);
     /* Read huffman code lengths for each symbol.  They're stored in
        a way similar to mtf; record a starting value for the first symbol,
        and an offset from the previous value for everys symbol after that. */
     t = reader.read(5); // lengths
-    for (var i = 0; i < symCount; i++) {
+    for (i = 0; i < symCount; i++) {
       for (;;) {
         if (t < 1 || t > MAX_HUFCODE_BITS) _throw(Err.DATA_ERROR);
         /* If first bit is 0, stop.  Else second bit indicates whether
@@ -204,7 +208,7 @@ Bunzip.prototype._get_next_block = function() {
     /* Find largest and smallest lengths in this group */
     var minLen,  maxLen;
     minLen = maxLen = length[0];
-    for (var i = 1; i < symCount; i++) {
+    for (i = 1; i < symCount; i++) {
       if (length[i] > maxLen)
         maxLen = length[i];
       else if (length[i] < minLen)
@@ -221,15 +225,15 @@ Bunzip.prototype._get_next_block = function() {
      * number of bits can have.  This is how the huffman codes can vary in
      * length: each code with a value>limit[length] needs another bit.
      */
-    var hufGroup = {};
+    hufGroup = {};
     groups.push(hufGroup);
-    hufGroup.permute = new Array(MAX_SYMBOLS); // UInt32Array
-    hufGroup.limit = new Array(MAX_HUFCODE_BITS + 2); // UInt32Array
-    hufGroup.base = new Array(MAX_HUFCODE_BITS + 1); // UInt32Array
+    hufGroup.permute = new Uint16Array(MAX_SYMBOLS);
+    hufGroup.limit = new Uint32Array(MAX_HUFCODE_BITS + 2);
+    hufGroup.base = new Uint32Array(MAX_HUFCODE_BITS + 1);
     hufGroup.minLen = minLen;
     hufGroup.maxLen = maxLen;
     /* Calculate permute[].  Concurently, initialize temp[] and limit[]. */
-    var pp = 0, i;
+    var pp = 0;
     for (i = minLen; i <= maxLen; i++) {
       temp[i] = hufGroup.limit[i] = 0;
       for (t = 0; t < symCount; t++)
@@ -266,12 +270,13 @@ Bunzip.prototype._get_next_block = function() {
      and run length encoding, saving the result into dbuf[dbufCount++]=uc */
 
   /* Initialize symbol occurrence counters and symbol Move To Front table */
-  var byteCount = new Uint32Array(256); // Uint32Array
-  for (var i = 0; i < 256; i++)
+  var byteCount = new Uint32Array(256);
+  for (i = 0; i < 256; i++)
     mtfSymbol[i] = i;
   /* Loop through compressed symbols. */
-  var runPos = 0, dbufCount = 0, symCount = 0, selector = 0, uc;
-  var dbuf = this.dbuf = new Array(this.dbufSize); // Uint32Array
+  var runPos = 0, dbufCount = 0, selector = 0, uc;
+  var dbuf = this.dbuf = new Uint32Array(this.dbufSize);
+  symCount = 0;
   for (;;) {
     /* Determine which huffman coding group to use. */
     if (!(symCount--)) {
@@ -280,7 +285,7 @@ Bunzip.prototype._get_next_block = function() {
       hufGroup = groups[selectors[selector++]];
     }
     /* Read next huffman-coded symbol. */
-    i = hufGroup.minLen
+    i = hufGroup.minLen;
     j = reader.read(i);
     for (;;i++) {
       if (i > hufGroup.maxLen) { _throw(Err.DATA_ERROR); }
@@ -340,13 +345,7 @@ Bunzip.prototype._get_next_block = function() {
        2 non-literal nextSym values equals -1.) */
     if (dbufCount >= this.dbufSize) { _throw(Err.DATA_ERROR); }
     i = nextSym - 1;
-    uc = mtfSymbol[i];
-    /* Adjust the MTF array.  Since we typically expect to move only a
-     * small number of symbols, and are bound by 256 in any case, using
-     * memmove here would typically be bigger and slower due to function
-     * call overhead and other assorted setup costs. */
-    mtfSymbol.splice(i, 1);
-    mtfSymbol.splice(0, 0, uc);
+    uc = mtf(mtfSymbol, i);
     uc = symToByte[uc];
     /* We have our literal byte.  Save it into dbuf. */
     byteCount[uc]++;
@@ -360,14 +359,14 @@ Bunzip.prototype._get_next_block = function() {
   */
   if (origPointer < 0 || origPointer >= dbufCount) { _throw(Err.DATA_ERROR); }
   /* Turn byteCount into cumulative occurrence counts of 0 to n-1. */
-  var j = 0;
-  for (var i = 0; i < 256; i++) {
+  j = 0;
+  for (i = 0; i < 256; i++) {
     k = j + byteCount[i];
     byteCount[i] = j;
     j = k;
   }
   /* Figure out what order dbuf would be in if we sorted it. */
-  for (var i = 0; i < dbufCount; i++) {
+  for (i = 0; i < dbufCount; i++) {
     uc = dbuf[i] & 0xff;
     dbuf[byteCount[uc]] |= (i << 8);
     byteCount[uc]++;
@@ -459,13 +458,13 @@ var coerceOutputStream = function(output) {
     outputStream.buffer = new Buffer(16384);
   }
   outputStream.pos = 0;
-  outputStream.writeByte = function(byte) {
+  outputStream.writeByte = function(_byte) {
     if (resizeOk && this.pos >= this.buffer.length) {
       var newBuffer = new Buffer(this.buffer.length*2);
       this.buffer.copy(newBuffer);
       this.buffer = newBuffer;
     }
-    this.buffer[this.pos++] = byte;
+    this.buffer[this.pos++] = _byte;
   };
   outputStream.getBuffer = function() {
     // trim buffer
@@ -519,10 +518,10 @@ Bunzip.decodeBlock = function(input, pos, output) {
   var moreBlocks = bz._get_next_block();
   if (moreBlocks) {
     /* Init the CRC for writing */
-    this.writeCRC = 0xffffffff;
+    bz.blockCRC = 0xffffffff;
 
     /* Zero this so the current byte from before the seek is not written */
-    this.writeCopies = 0;
+    bz.writeCopies = 0;
 
     /* Decompress the block and write to stdout */
     bz._read_bunzip();
@@ -530,7 +529,7 @@ Bunzip.decodeBlock = function(input, pos, output) {
   }
   if ('getBuffer' in outputStream)
     return outputStream.getBuffer();
-}
+};
 /* Reads bzip2 file from stream or buffer `input`, and invoke
  * `callback(position, size)` once for each bzip2 block,
  * where position gives the starting position (in *bits*)
