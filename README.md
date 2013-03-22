@@ -93,6 +93,14 @@ Feel free to fork on github and submit pull requests!
 * Add compression along with decompression.  See `micro-bzip` at
 http://www.landley.net/code/
 
+## Related projects
+
+* https://github.com/skeggse/node-bzip node-bzip (original upstream source)
+* https://github.com/cscott/compressjs
+  Lots of compression/decompression algorithms from the same author as this
+  module.
+* https://github.com/cscott/lzjb fast LZJB compression/decompression
+
 ## License
 
 #### LGPL 2.1 License
