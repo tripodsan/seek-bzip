@@ -1,5 +1,7 @@
 # seek-bzip
 
+[![Build Status](https://travis-ci.org/cscott/seek-bzip.png)](https://travis-ci.org/cscott/seek-bzip)
+
 `seek-bzip` is a pure-javascript Node.JS module adapted from 'node-bzip' and before that antimatter15's pure-javascript implementation for decoding bzip2 data.  `seek-bzip` currently only decodes buffers into other buffers, synchronously.  Unlike `node-bzip`, `seek-bzip` can seek to and decode single blocks from the bzip2 file.
 
 ## How to Install
