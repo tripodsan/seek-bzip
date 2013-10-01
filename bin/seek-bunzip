@@ -108,12 +108,16 @@ var inStream = makeInStream(in_fd);
 var outStream= makeOutStream(out_fd);
 
 if (program.decompress) {
-    if (program.block !== undefined) {
-	Bunzip.decodeBlock(inStream, +program.block, outStream);
-    } else {
-	Bunzip.decode(inStream, outStream, program.multistream);
+    try {
+        if (program.block !== undefined) {
+	    Bunzip.decodeBlock(inStream, +program.block, outStream);
+        } else {
+	    Bunzip.decode(inStream, outStream, program.multistream);
+        }
+        outStream.flush();
+    } catch (e) {
+        if (e.code !== 'EPIPE') throw e;
     }
-    outStream.flush();
     close_in();
     close_out();
     return 0;
