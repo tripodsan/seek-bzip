@@ -2,7 +2,12 @@
 
 [![Build Status](https://travis-ci.org/cscott/seek-bzip.png)](https://travis-ci.org/cscott/seek-bzip)
 
-`seek-bzip` is a pure-javascript Node.JS module adapted from 'node-bzip' and before that antimatter15's pure-javascript implementation for decoding bzip2 data.  `seek-bzip` currently only decodes buffers into other buffers, synchronously.  Unlike `node-bzip`, `seek-bzip` can seek to and decode single blocks from the bzip2 file.
+`seek-bzip` is a pure-javascript Node.JS module adapted from [node-bzip](https://github.com/skeggse/node-bzip) and before that [antimatter15's pure-javascript nzip2 decoder](https://github.com/antimatter15/bzip2.js).  Like these projects, `seek-bzip` only does decompression (see [compressjs](https://github.com/cscott/compressjs) if you need compression code).  Unlike those other projects, `seek-bzip` can seek to and decode single blocks from the bzip2 file.
+
+`seek-bzip` primarily decodes buffers into other buffers, synchronously.
+With the help of the [fibers](https://github.com/laverdet/node-fibers)
+package, it can operate on node streams; see `test/stream.js` for an
+example.
 
 ## How to Install
 
@@ -92,18 +97,15 @@ block inside a bzip2 file, using the `decodeBlock` method.
 
 ## Help wanted
 
-The following improvements to this module would be generally useful.
+Improvements to this module would be generally useful.
 Feel free to fork on github and submit pull requests!
-
-* Add compression along with decompression.  See `micro-bzip` at
-http://www.landley.net/code/
 
 ## Related projects
 
 * https://github.com/skeggse/node-bzip node-bzip (original upstream source)
 * https://github.com/cscott/compressjs
   Lots of compression/decompression algorithms from the same author as this
-  module.
+  module, including bzip2 compression code.
 * https://github.com/cscott/lzjb fast LZJB compression/decompression
 
 ## License
