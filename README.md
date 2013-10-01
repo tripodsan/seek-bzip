@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/cscott/seek-bzip.png)](https://travis-ci.org/cscott/seek-bzip)
 
-`seek-bzip` is a pure-javascript Node.JS module adapted from [node-bzip](https://github.com/skeggse/node-bzip) and before that [antimatter15's pure-javascript nzip2 decoder](https://github.com/antimatter15/bzip2.js).  Like these projects, `seek-bzip` only does decompression (see [compressjs](https://github.com/cscott/compressjs) if you need compression code).  Unlike those other projects, `seek-bzip` can seek to and decode single blocks from the bzip2 file.
+`seek-bzip` is a pure-javascript Node.JS module adapted from [node-bzip](https://github.com/skeggse/node-bzip) and before that [antimatter15's pure-javascript bzip2 decoder](https://github.com/antimatter15/bzip2.js).  Like these projects, `seek-bzip` only does decompression (see [compressjs](https://github.com/cscott/compressjs) if you need compression code).  Unlike those other projects, `seek-bzip` can seek to and decode single blocks from the bzip2 file.
 
 `seek-bzip` primarily decodes buffers into other buffers, synchronously.
 With the help of the [fibers](https://github.com/laverdet/node-fibers)
@@ -20,7 +20,7 @@ This package uses
 
 ## Usage
 
-After compressing some example data into `example.bz2`, the following with recreate that original data and save it to `example`.
+After compressing some example data into `example.bz2`, the following will recreate that original data and save it to `example`:
 
 ```
 var Bunzip = require('seek-bzip');
@@ -41,6 +41,8 @@ you wish to seek to inside the compressed file.)  The `seek-bzip` module
 has been designed to be compatible with the C implementation `seek-bzip2`
 available from https://bitbucket.org/james_taylor/seek-bzip2.  That codebase
 contains a `bzip-table` tool which will generate bzip2 block start indices.
+There is also a pure-JavaScript `seek-bzip-table` tool in this package's
+`bin` directory.
 
 ## Documentation
 
@@ -94,6 +96,44 @@ where `position` gives the starting position of the block (in *bits*), and
 
 This can be used to construct an index allowing direct access to a particular
 block inside a bzip2 file, using the `decodeBlock` method.
+
+## Command-line
+There are binaries available in bin.  The first generates an index of all
+the blocks in a bzip2-compressed file:
+```
+$ bin/seek-bzip-table test/sample4.bz2
+32	99981
+320555	99981
+606348	99981
+847568	99981
+1089094	99981
+1343625	99981
+1596228	99981
+1843336	99981
+2090919	99981
+2342106	39019
+$
+```
+The first field is the starting position of the block, in bits, and the
+second field is the length of the block, in bytes.
+
+The second binary decodes an arbitrary block of a bzip2 file:
+```
+$ bin/seek-bunzip -d -b 2342106 test/sample4.bz2 | tail
+élan's
+émigré
+émigré's
+émigrés
+épée
+épée's
+épées
+étude
+étude's
+études
+$
+```
+
+Use `--help` to see other options.
 
 ## Help wanted
 
