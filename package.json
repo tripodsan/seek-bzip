@@ -8,7 +8,7 @@
     "Rob Landley (http://landley.net)"
   ],
   "description": "a pure-JavaScript Node.JS module for random-access decoding bzip2 data",
-  "main": "./seek-bzip/index.js",
+  "main": "./lib/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/cscott/seek-bzip.git"
