@@ -8,6 +8,7 @@ var Bunzip = require('../');
 var fs = require('fs');
 var stream = require('stream');
 var Fiber = require('fibers');
+var util = require('util');
 
 /** Use node-fibers to convert our synchronous Stream interface to the
   * standard node asynchronous interface. */
@@ -37,7 +38,7 @@ var BunzipStream = function() {
     });
     this._fiber.run();
 };
-BunzipStream.prototype = Object.create(stream.Transform.prototype);
+util.inherits(BunzipStream, stream.Transform);
 BunzipStream.prototype._transform = function(chunk, encoding, callback) {
     this._fiber.run(chunk);
     callback();
@@ -53,6 +54,7 @@ describe('bzip2 streaming decode', function(){
           var data = new Buffer(referenceData.length), pos = 0;
           outStream.on('readable', function() {
               var b = outStream.read(), i;
+              if (b===null) { return; }
               for (i=0; i<b.length; i++) { data[pos++] = b[i]; }
           }).on('end', function() {
               assert.equal(pos, data.length);
