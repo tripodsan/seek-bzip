@@ -36,7 +36,7 @@ if (program.decompress && program.compress) {
 var makeInStream = function(in_fd) {
     var stat = fs.fstatSync(in_fd);
     var stream = {
-	buffer: new Buffer(4096),
+	buffer: new Uint8Array(4096),
 	filePos: null,
 	pos: 0,
 	end: 0,
@@ -80,7 +80,7 @@ var makeInStream = function(in_fd) {
 };
 var makeOutStream = function(out_fd) {
     return {
-	buffer: new Buffer(4096),
+	buffer: new Uint8Array(4096),
 	pos: 0,
 	flush: function() {
 	    fs.writeSync(out_fd, this.buffer, 0, this.pos);

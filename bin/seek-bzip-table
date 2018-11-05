@@ -17,7 +17,7 @@ program.parse(process.argv);
 var makeInStream = function(in_fd) {
     var stat = fs.fstatSync(in_fd);
     var stream = {
-	buffer: new Buffer(4096),
+	buffer: new Uint8Array(4096),
 	totalPos: 0,
 	pos: 0,
 	end: 0,

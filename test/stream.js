@@ -26,7 +26,7 @@ var BunzipStream = function() {
         };
         var outputStream = new Bunzip.Stream();
         outputStream.writeByte = function(_byte) {
-            this.write(new Buffer([_byte]),0,1);
+            this.write(new Uint8Array([_byte]),0,1);
         };
         outputStream.write = function(buffer, bufOffset, length) {
             if (bufOffset !== 0 || length !== buffer.length) {
@@ -51,14 +51,14 @@ describe('bzip2 streaming decode', function(){
           var referenceData = fs.readFileSync('test/'+f+'.ref');
           var inStream = fs.createReadStream('test/'+f+'.bz2');
           var outStream = inStream.pipe(new BunzipStream());
-          var data = new Buffer(referenceData.length), pos = 0;
+          var data = new Uint8Array(referenceData.length), pos = 0;
           outStream.on('readable', function() {
               var b = outStream.read(), i;
               if (b===null) { return; }
               for (i=0; i<b.length; i++) { data[pos++] = b[i]; }
           }).on('end', function() {
               assert.equal(pos, data.length);
-              assert.equal(data.toString('hex'), referenceData.toString('hex'));
+              assert.equal(new Buffer(data).toString('hex'), new Buffer(referenceData).toString('hex'));
               callback();
           });
       });
