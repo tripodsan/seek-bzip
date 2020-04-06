@@ -1,6 +1,6 @@
 {
-  "name": "seek-bzip",
-  "version": "1.0.5-git",
+  "name": "@tripod/seek-bzip",
+  "version": "1.0.5-openpgp",
   "contributors": [
     "C. Scott Ananian (http://cscott.net)",
     "Eli Skeggs",
@@ -25,8 +25,8 @@
     "commander": "~2.8.1"
   },
   "devDependencies": {
-    "fibers": "~1.0.6",
-    "mocha": "~2.2.5"
+    "fibers": "^4.0.2",
+    "mocha": "^7.1.1"
   },
   "scripts": {
     "test": "mocha"
